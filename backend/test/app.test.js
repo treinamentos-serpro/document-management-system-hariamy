@@ -6,6 +6,14 @@ const path = require('node:path');
 
 const storageDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dms-test-storage-'));
 process.env.STORAGE_DIR = storageDir;
+process.env.JWT_SECRET = 'test-jwt-secret';
+process.env.AUTH_USERS_JSON = JSON.stringify([
+  { id: 'alice-upload', password: 'alice123' },
+  { id: 'alice-list', password: 'alice123' },
+  { id: 'alice-download', password: 'alice123' },
+  { id: 'alice-private', password: 'alice123' },
+  { id: 'bob-private', password: 'bob123' },
+]);
 
 const app = require('../src/app');
 
@@ -32,21 +40,71 @@ async function withServer(runTest) {
   }
 }
 
-async function uploadDocument(baseUrl, { owner, content = 'conteudo de teste', filename = 'teste.txt' }) {
+async function loginAndGetToken(baseUrl, userId, password) {
+  const response = await fetch(`${baseUrl}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, password }),
+  });
+
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.ok(body.token);
+  assert.equal(body.user.id, userId);
+  return body.token;
+}
+
+function buildAuthHeaders(token) {
+  return { Authorization: ['Bearer', token].join(' ') };
+}
+
+async function uploadDocument(baseUrl, { token, content = 'conteudo de teste', filename = 'teste.txt' }) {
   const formData = new FormData();
   formData.set('file', new Blob([content], { type: 'text/plain' }), filename);
 
   return fetch(`${baseUrl}/api/upload`, {
     method: 'POST',
-    headers: { 'X-User-Id': owner },
+    headers: buildAuthHeaders(token),
     body: formData,
   });
 }
 
-test('POST /api/upload salva metadados do documento enviado', async () => {
+test('POST /api/auth/login retorna token JWT para credenciais válidas', async () => {
   await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: 'alice-upload', password: 'alice123' }),
+    });
+
+    assert.equal(response.status, 200);
+
+    const body = await response.json();
+    assert.ok(body.token);
+    assert.equal(body.user.id, 'alice-upload');
+  });
+});
+
+test('POST /api/auth/login rejeita credenciais inválidas', async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: 'alice-upload', password: 'senha-incorreta' }),
+    });
+
+    assert.equal(response.status, 401);
+
+    const body = await response.json();
+    assert.equal(body.error.code, 'INVALID_CREDENTIALS');
+  });
+});
+
+test('POST /api/upload salva metadados do documento enviado para o usuário autenticado', async () => {
+  await withServer(async (baseUrl) => {
+    const token = await loginAndGetToken(baseUrl, 'alice-upload', 'alice123');
     const response = await uploadDocument(baseUrl, {
-      owner: 'usuario-upload',
+      token,
       content: 'documento enviado',
       filename: 'contrato.txt',
     });
@@ -58,28 +116,28 @@ test('POST /api/upload salva metadados do documento enviado', async () => {
     assert.equal(document.originalName, 'contrato.txt');
     assert.equal(document.size, Buffer.byteLength('documento enviado'));
     assert.equal(document.mimeType, 'text/plain');
-    assert.equal(document.owner, 'usuario-upload');
+    assert.equal(document.owner, 'alice-upload');
     assert.ok(Date.parse(document.uploadedAt));
   });
 });
 
-test('GET /api/documents lista apenas documentos do usuário informado', async () => {
+test('GET /api/documents lista apenas documentos do usuário autenticado', async () => {
   await withServer(async (baseUrl) => {
-    const owner = 'usuario-listagem';
-    const otherOwner = 'outro-usuario';
+    const aliceToken = await loginAndGetToken(baseUrl, 'alice-list', 'alice123');
+    const bobToken = await loginAndGetToken(baseUrl, 'bob-private', 'bob123');
 
     const firstUpload = await uploadDocument(baseUrl, {
-      owner,
+      token: aliceToken,
       content: 'primeiro documento',
       filename: 'primeiro.txt',
     });
     const secondUpload = await uploadDocument(baseUrl, {
-      owner,
+      token: aliceToken,
       content: 'segundo documento',
       filename: 'segundo.txt',
     });
     await uploadDocument(baseUrl, {
-      owner: otherOwner,
+      token: bobToken,
       content: 'documento privado',
       filename: 'privado.txt',
     });
@@ -88,7 +146,7 @@ test('GET /api/documents lista apenas documentos do usuário informado', async (
     const secondDocument = await secondUpload.json();
 
     const response = await fetch(`${baseUrl}/api/documents`, {
-      headers: { 'X-User-Id': owner },
+      headers: buildAuthHeaders(aliceToken),
     });
 
     assert.equal(response.status, 200);
@@ -98,22 +156,23 @@ test('GET /api/documents lista apenas documentos do usuário informado', async (
       body.documents.map((document) => document.id).sort(),
       [firstDocument.id, secondDocument.id].sort(),
     );
-    assert.ok(body.documents.every((document) => document.owner === owner));
+    assert.ok(body.documents.every((document) => document.owner === 'alice-list'));
   });
 });
 
 test('GET /api/documents/:id/download baixa o conteúdo do documento', async () => {
   await withServer(async (baseUrl) => {
+    const token = await loginAndGetToken(baseUrl, 'alice-download', 'alice123');
     const content = 'conteudo para download';
     const uploadResponse = await uploadDocument(baseUrl, {
-      owner: 'usuario-download',
+      token,
       content,
       filename: 'relatorio.txt',
     });
     const document = await uploadResponse.json();
 
     const response = await fetch(`${baseUrl}/api/documents/${document.id}/download`, {
-      headers: { 'X-User-Id': 'usuario-download' },
+      headers: buildAuthHeaders(token),
     });
 
     assert.equal(response.status, 200);
@@ -123,95 +182,75 @@ test('GET /api/documents/:id/download baixa o conteúdo do documento', async () 
   });
 });
 
-test('o app backend é exportado', () => {
-  assert.ok(app, 'o app deve estar definido');
-  assert.equal(typeof app, 'function', 'o app Express deve ser uma função');
-});
-
-test('upload exige identificador de usuário válido', async () => {
+test('rotas de documentos exigem autenticação JWT', async () => {
   await withServer(async (baseUrl) => {
     const formData = new FormData();
     formData.append('file', new Blob(['hello-world'], { type: 'text/plain' }), 'hello.txt');
 
-    const response = await fetch(`${baseUrl}/api/upload`, {
+    const uploadResponse = await fetch(`${baseUrl}/api/upload`, {
       method: 'POST',
       body: formData,
     });
+    const listResponse = await fetch(`${baseUrl}/api/documents`);
 
-    assert.equal(response.status, 401, 'deve exigir o cabeçalho X-User-Id');
+    assert.equal(uploadResponse.status, 401);
+    assert.equal(listResponse.status, 401);
   });
 });
 
-test('listagem de documentos exige identificador de usuário válido', async () => {
+test('rotas de documentos rejeitam token inválido', async () => {
   await withServer(async (baseUrl) => {
-    const response = await fetch(`${baseUrl}/api/documents`);
+    const response = await fetch(`${baseUrl}/api/documents`, {
+      headers: buildAuthHeaders('token-invalido'),
+    });
 
-    assert.equal(response.status, 401, 'deve exigir o cabeçalho X-User-Id');
+    assert.equal(response.status, 401);
+
+    const body = await response.json();
+    assert.equal(body.error.code, 'UNAUTHORIZED');
   });
 });
 
 test('upload rejeita tipo de arquivo não permitido', async () => {
   await withServer(async (baseUrl) => {
+    const token = await loginAndGetToken(baseUrl, 'alice-private', 'alice123');
     const formData = new FormData();
     formData.append('file', new Blob(['alert(1)'], { type: 'application/javascript' }), 'danger.js');
 
     const response = await fetch(`${baseUrl}/api/upload`, {
       method: 'POST',
-      headers: { 'X-User-Id': 'alice' },
+      headers: buildAuthHeaders(token),
       body: formData,
     });
 
-    assert.equal(response.status, 415, 'deve rejeitar tipos MIME não permitidos');
+    assert.equal(response.status, 415);
   });
 });
 
-test('upload rejeita identificador de usuário maior que 100 caracteres', async () => {
+test('download impede acesso ao documento de outro usuário', async () => {
   await withServer(async (baseUrl) => {
-    const formData = new FormData();
-    formData.append('file', new Blob(['conteudo valido'], { type: 'text/plain' }), 'valido.txt');
+    const aliceToken = await loginAndGetToken(baseUrl, 'alice-private', 'alice123');
+    const bobToken = await loginAndGetToken(baseUrl, 'bob-private', 'bob123');
 
-    const response = await fetch(`${baseUrl}/api/upload`, {
-      method: 'POST',
-      headers: { 'X-User-Id': 'a'.repeat(101) },
-      body: formData,
-    });
-
-    assert.equal(response.status, 400);
-
-    const body = await response.json();
-    assert.equal(body.error.code, 'INVALID_USER_ID');
-  });
-});
-
-test('listagem rejeita identificador de usuário maior que 100 caracteres', async () => {
-  await withServer(async (baseUrl) => {
-    const response = await fetch(`${baseUrl}/api/documents`, {
-      headers: { 'X-User-Id': 'a'.repeat(101) },
-    });
-
-    assert.equal(response.status, 400);
-
-    const body = await response.json();
-    assert.equal(body.error.code, 'INVALID_USER_ID');
-  });
-});
-
-test('download rejeita identificador de usuário maior que 100 caracteres', async () => {
-  await withServer(async (baseUrl) => {
     const uploadResponse = await uploadDocument(baseUrl, {
-      owner: 'usuario-valido-download',
-      content: 'conteudo de download valido',
-      filename: 'download.txt',
+      token: aliceToken,
+      content: 'documento privado',
+      filename: 'privado.txt',
     });
     const document = await uploadResponse.json();
 
     const response = await fetch(`${baseUrl}/api/documents/${document.id}/download`, {
-      headers: { 'X-User-Id': 'a'.repeat(101) },
+      headers: buildAuthHeaders(bobToken),
     });
 
-    assert.equal(response.status, 400);
+    assert.equal(response.status, 403);
 
     const body = await response.json();
-    assert.equal(body.error.code, 'INVALID_USER_ID');
+    assert.equal(body.error.code, 'DOCUMENT_ACCESS_DENIED');
   });
+});
+
+test('o app backend é exportado', () => {
+  assert.ok(app, 'o app deve estar definido');
+  assert.equal(typeof app, 'function', 'o app Express deve ser uma função');
 });

@@ -3,10 +3,6 @@
 const path = require('path');
 const documentService = require('../services/documentService');
 
-function getOwner(req) {
-  return req.get('X-User-Id');
-}
-
 // Retorna true e já responde a requisição se o erro for um erro de negócio conhecido.
 function respondIfServiceError(res, error) {
   if (error instanceof documentService.ServiceError) {
@@ -18,7 +14,7 @@ function respondIfServiceError(res, error) {
 
 function uploadDocument(req, res) {
   try {
-    const document = documentService.registerUpload({ file: req.file, owner: getOwner(req) });
+    const document = documentService.registerUpload({ file: req.file, owner: req.user?.id });
     res.status(201).json(document);
   } catch (error) {
     if (respondIfServiceError(res, error)) return;
@@ -30,7 +26,7 @@ function uploadDocument(req, res) {
 
 function listDocuments(req, res) {
   try {
-    const documents = documentService.listDocuments(getOwner(req));
+    const documents = documentService.listDocuments(req.user?.id);
     res.status(200).json({ documents });
   } catch (error) {
     if (respondIfServiceError(res, error)) return;
@@ -44,7 +40,7 @@ function downloadDocument(req, res) {
   try {
     const document = documentService.getDownloadableDocument({
       id: req.params.id,
-      owner: getOwner(req),
+      owner: req.user?.id,
     });
 
     // Nome sanitizado para evitar quebra de cabeçalho ou exposição de caminho físico.

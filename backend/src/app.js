@@ -12,6 +12,7 @@
 
 const express = require('express');
 const { PORT } = require('./config');
+const authRoutes = require('./routes/authRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 
 const app = express();
@@ -22,6 +23,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+app.use('/api/auth', authRoutes);
 app.use('/api', documentRoutes);
 
 app.use((error, req, res, next) => {

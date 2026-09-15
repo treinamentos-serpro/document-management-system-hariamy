@@ -4,14 +4,14 @@ const { STORAGE_DIR } = require('../config');
 
 const USER_ID_MAX_LENGTH = 100;
 
-function validateOwner(rawOwner) {
-  const owner = rawOwner && rawOwner.trim();
+function validateUserId(rawUserId) {
+  const userId = rawUserId && rawUserId.trim();
 
-  if (!owner || owner.length === 0) {
-    throw new ServiceError('UNAUTHORIZED', 'Usuário não autenticado. Informe o cabeçalho X-User-Id.', 401);
+  if (!userId || userId.length === 0) {
+    throw new ServiceError('UNAUTHORIZED', 'Usuário não autenticado. Envie um JWT válido no cabeçalho Authorization.', 401);
   }
 
-  if (owner.length > USER_ID_MAX_LENGTH) {
+  if (userId.length > USER_ID_MAX_LENGTH) {
     throw new ServiceError(
       'INVALID_USER_ID',
       'O identificador do usuário deve ter no máximo 100 caracteres.',
@@ -19,7 +19,28 @@ function validateOwner(rawOwner) {
     );
   }
 
-  return owner;
+  return userId;
+}
+
+function validateOwner(rawOwner) {
+  return validateUserId(rawOwner);
+}
+
+function validateLoginInput(userId, password) {
+  if (typeof userId !== 'string' || userId.trim().length === 0) {
+    throw new ServiceError('INVALID_LOGIN', 'Informe usuário e senha para autenticar.', 400);
+  }
+
+  const validatedUserId = validateUserId(userId);
+
+  if (typeof password !== 'string' || password.length === 0) {
+    throw new ServiceError('INVALID_LOGIN', 'Informe usuário e senha para autenticar.', 400);
+  }
+
+  return {
+    userId: validatedUserId,
+    password,
+  };
 }
 
 function ensureSafeStoragePath(filePath) {
@@ -41,7 +62,9 @@ function validateDocumentId(id) {
 }
 
 module.exports = {
+  validateUserId,
   validateOwner,
+  validateLoginInput,
   ensureSafeStoragePath,
   validateDocumentId,
 };
