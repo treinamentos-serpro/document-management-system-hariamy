@@ -122,3 +122,45 @@ test('GET /api/documents/:id/download baixa o conteúdo do documento', async () 
     assert.equal(await response.text(), content);
   });
 });
+
+test('o app backend é exportado', () => {
+  assert.ok(app, 'o app deve estar definido');
+  assert.equal(typeof app, 'function', 'o app Express deve ser uma função');
+});
+
+test('upload exige identificador de usuário válido', async () => {
+  await withServer(async (baseUrl) => {
+    const formData = new FormData();
+    formData.append('file', new Blob(['hello-world'], { type: 'text/plain' }), 'hello.txt');
+
+    const response = await fetch(`${baseUrl}/api/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    assert.equal(response.status, 401, 'deve exigir o cabeçalho X-User-Id');
+  });
+});
+
+test('listagem de documentos exige identificador de usuário válido', async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/documents`);
+
+    assert.equal(response.status, 401, 'deve exigir o cabeçalho X-User-Id');
+  });
+});
+
+test('upload rejeita tipo de arquivo não permitido', async () => {
+  await withServer(async (baseUrl) => {
+    const formData = new FormData();
+    formData.append('file', new Blob(['alert(1)'], { type: 'application/javascript' }), 'danger.js');
+
+    const response = await fetch(`${baseUrl}/api/upload`, {
+      method: 'POST',
+      headers: { 'X-User-Id': 'alice' },
+      body: formData,
+    });
+
+    assert.equal(response.status, 415, 'deve rejeitar tipos MIME não permitidos');
+  });
+});

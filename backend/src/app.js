@@ -11,19 +11,32 @@
 // usando multer com diskStorage. Não utilize provedores externos.
 
 const express = require('express');
+const { PORT } = require('./config');
 const documentRoutes = require('./routes/documentRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Endpoint de verificação de saúde.
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
 app.use('/api', documentRoutes);
+
+app.use((error, req, res, next) => {
+  if (res.headersSent) {
+    return next(error);
+  }
+
+  const statusCode = error.statusCode || 500;
+  const code = error.code || 'INTERNAL_SERVER_ERROR';
+  const message = error.message || 'Erro interno no servidor.';
+
+  res.status(statusCode).json({
+    error: { code, message },
+  });
+});
 
 if (require.main === module) {
   app.listen(PORT, () => {

@@ -49,7 +49,7 @@ function downloadDocument(req, res) {
 
     // Nome sanitizado para evitar quebra de cabeçalho ou exposição de caminho físico.
     const safeName = path.basename(document.originalName).replace(/["\r\n]/g, '');
-    res.setHeader('Content-Type', document.mimeType);
+    res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${safeName}"`);
 
     res.sendFile(path.resolve(document.path), (error) => {

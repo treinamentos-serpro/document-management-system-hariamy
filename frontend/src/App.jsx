@@ -13,10 +13,18 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState('');
 
   const loadDocuments = useCallback(async (currentOwnerId) => {
+    const nextOwnerId = currentOwnerId.trim();
+    if (!nextOwnerId) {
+      setDocuments([]);
+      setErrorMessage('Informe um identificador de usuário para acessar os documentos.');
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage('');
     try {
-      const result = await fetchDocuments(currentOwnerId);
+      const result = await fetchDocuments(nextOwnerId);
       setDocuments(result);
     } catch (error) {
       setErrorMessage(error.message || 'Não foi possível carregar os documentos.');
