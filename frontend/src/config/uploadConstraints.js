@@ -11,7 +11,7 @@ export const ACCEPTED_FILE_TYPES = [
   'image/jpeg',
 ];
 
-export const FILE_INPUT_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.txt,image/png,image/jpeg';
+export const FILE_INPUT_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,image/png,image/jpeg';
 export const ACCEPTED_FILE_EXTENSIONS = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.png', '.jpg', '.jpeg'];
 
 export const UPLOAD_CONSTRAINTS_HELP_TEXT =
