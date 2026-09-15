@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react';
 import { uploadDocument } from '../services/documentsApi';
 import {
-  ACCEPTED_FILE_TYPES,
   FILE_INPUT_ACCEPT,
   MAX_FILE_SIZE_BYTES,
   UPLOAD_CONSTRAINTS_HELP_TEXT,
+  isAcceptedUploadFile,
 } from '../config/uploadConstraints';
 
 export default function UploadComponent({ ownerId, onUploadSuccess }) {
@@ -26,7 +26,7 @@ export default function UploadComponent({ ownerId, onUploadSuccess }) {
       return 'O arquivo excede o tamanho máximo permitido de 10 MB.';
     }
 
-    if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+    if (!isAcceptedUploadFile(file)) {
       return 'Tipo de arquivo não suportado. Use PDF, Word, Excel, texto ou imagens PNG/JPG.';
     }
 

@@ -182,3 +182,36 @@ test('upload rejeita identificador de usuário maior que 100 caracteres', async 
     assert.equal(body.error.code, 'INVALID_USER_ID');
   });
 });
+
+test('listagem rejeita identificador de usuário maior que 100 caracteres', async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/documents`, {
+      headers: { 'X-User-Id': 'a'.repeat(101) },
+    });
+
+    assert.equal(response.status, 400);
+
+    const body = await response.json();
+    assert.equal(body.error.code, 'INVALID_USER_ID');
+  });
+});
+
+test('download rejeita identificador de usuário maior que 100 caracteres', async () => {
+  await withServer(async (baseUrl) => {
+    const uploadResponse = await uploadDocument(baseUrl, {
+      owner: 'usuario-valido-download',
+      content: 'conteudo de download valido',
+      filename: 'download.txt',
+    });
+    const document = await uploadResponse.json();
+
+    const response = await fetch(`${baseUrl}/api/documents/${document.id}/download`, {
+      headers: { 'X-User-Id': 'a'.repeat(101) },
+    });
+
+    assert.equal(response.status, 400);
+
+    const body = await response.json();
+    assert.equal(body.error.code, 'INVALID_USER_ID');
+  });
+});
