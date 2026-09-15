@@ -13,6 +13,9 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState('');
 
   const loadDocuments = useCallback(async (currentOwnerId) => {
+    setIsLoading(true);
+    setErrorMessage('');
+
     const nextOwnerId = currentOwnerId.trim();
     if (!nextOwnerId) {
       setDocuments([]);
@@ -21,8 +24,6 @@ export default function App() {
       return;
     }
 
-    setIsLoading(true);
-    setErrorMessage('');
     try {
       const result = await fetchDocuments(nextOwnerId);
       setDocuments(result);

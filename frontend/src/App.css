@@ -165,6 +165,14 @@ body {
   opacity: 0.75;
 }
 
+.help-text {
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  opacity: 0.85;
+}
+
 .error-message {
   color: #b3001b;
   background: #ffe3e3;
