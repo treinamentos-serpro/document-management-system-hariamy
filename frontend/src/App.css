@@ -1,0 +1,176 @@
+/* Tema floral em tons de rosa e dourado para o Document Management System. */
+
+:root {
+  --pink-light: #ffe3ef;
+  --pink-medium: #ff9ebb;
+  --pink-strong: #d6336c;
+  --gold: #d4af37;
+  --gold-light: #f7e7b6;
+  --text-dark: #5a2a3a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top left, var(--pink-light), #fff6ea 60%);
+  color: var(--text-dark);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.app-shell {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 3rem;
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.app-header h1 {
+  margin-bottom: 0.25rem;
+  color: var(--pink-strong);
+  text-shadow: 0 1px 0 var(--gold-light);
+}
+
+.app-header p {
+  color: var(--text-dark);
+  opacity: 0.8;
+}
+
+.owner-card,
+.upload-card,
+.documents-card {
+  background: #fffdf8;
+  border: 1px solid var(--gold-light);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 6px 18px rgba(214, 51, 108, 0.08);
+}
+
+.owner-card label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--pink-strong);
+}
+
+.owner-card input,
+.upload-input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--pink-medium);
+  border-radius: 10px;
+  font-size: 1rem;
+  background: #fffaf3;
+}
+
+.owner-card input:focus,
+.upload-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
+}
+
+.upload-card h2,
+.documents-card h2 {
+  margin-top: 0;
+  color: var(--pink-strong);
+}
+
+.upload-controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary {
+  border: none;
+  border-radius: 999px;
+  padding: 0.55rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--pink-strong), var(--pink-medium));
+  color: #fff;
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--text-dark);
+}
+
+.btn-primary:hover:not(:disabled),
+.btn-secondary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(214, 51, 108, 0.25);
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.document-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.document-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  background: linear-gradient(135deg, #fff, var(--pink-light));
+  border: 1px solid var(--pink-medium);
+  border-radius: 12px;
+}
+
+.document-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.document-name {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.document-meta {
+  font-size: 0.85rem;
+  color: var(--pink-strong);
+  opacity: 0.85;
+}
+
+.info-message {
+  text-align: center;
+  color: var(--text-dark);
+  opacity: 0.75;
+}
+
+.error-message {
+  color: #b3001b;
+  background: #ffe3e3;
+  border: 1px solid #ffb3b3;
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
