@@ -1,16 +1,9 @@
-// Repository: persiste arquivos no filesystem local e mantém metadados em memória.
-// Não conhece Express nem detalhes de HTTP (RNF-10).
-
 const fs = require('fs');
-const path = require('path');
+const { STORAGE_DIR } = require('../config');
 
-const STORAGE_DIR = process.env.STORAGE_DIR
-  ? path.resolve(process.env.STORAGE_DIR)
-  : path.join(__dirname, '..', '..', 'storage');
+const storageRoot = STORAGE_DIR;
+fs.mkdirSync(storageRoot, { recursive: true });
 
-fs.mkdirSync(STORAGE_DIR, { recursive: true });
-
-// Metadados em memória; perdidos quando o processo é reiniciado (RNF-05).
 const documentsById = new Map();
 
 function save(document) {
@@ -27,7 +20,7 @@ function findByOwner(owner) {
 }
 
 module.exports = {
-  STORAGE_DIR,
+  STORAGE_DIR: storageRoot,
   save,
   findById,
   findByOwner,
