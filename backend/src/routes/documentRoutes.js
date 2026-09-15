@@ -1,26 +1,9 @@
-// Rotas: registra endpoints e middleware do multer; não contém regras de negócio.
-
-const crypto = require('crypto');
-const path = require('path');
 const express = require('express');
 const multer = require('multer');
-const documentRepository = require('../repositories/documentRepository');
 const documentController = require('../controllers/documentController');
+const { createUploadMiddleware } = require('../infrastructure/fileUpload');
 
-const MAX_FILE_SIZE_BYTES = Number(process.env.MAX_FILE_SIZE_BYTES) || 10 * 1024 * 1024;
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, documentRepository.STORAGE_DIR);
-  },
-  filename: (req, file, cb) => {
-    // O cliente não controla o nome físico do arquivo armazenado.
-    cb(null, `${crypto.randomUUID()}${path.extname(file.originalname)}`);
-  },
-});
-
-const upload = multer({ storage, limits: { fileSize: MAX_FILE_SIZE_BYTES } });
-
+const upload = createUploadMiddleware();
 const router = express.Router();
 
 router.post('/upload', (req, res, next) => {
@@ -30,6 +13,13 @@ router.post('/upload', (req, res, next) => {
         error: { code: 'FILE_TOO_LARGE', message: 'O arquivo excede o tamanho máximo permitido.' },
       });
     }
+
+    if (error && error.code === 'UNSUPPORTED_MEDIA_TYPE') {
+      return res.status(415).json({
+        error: { code: 'UNSUPPORTED_MEDIA_TYPE', message: 'Tipo de arquivo não permitido.' },
+      });
+    }
+
     if (error) return next(error);
     return documentController.uploadDocument(req, res);
   });

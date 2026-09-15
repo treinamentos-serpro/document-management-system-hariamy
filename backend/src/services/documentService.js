@@ -1,30 +1,8 @@
-// Service: regras de negócio, autorização por proprietário e orquestração das operações.
-
 const crypto = require('crypto');
 const fs = require('fs');
 const documentRepository = require('../repositories/documentRepository');
-
-const USER_ID_MAX_LENGTH = 100;
-
-class ServiceError extends Error {
-  constructor(code, message, statusCode) {
-    super(message);
-    this.code = code;
-    this.statusCode = statusCode;
-  }
-}
-
-function validateOwner(rawOwner) {
-  const owner = rawOwner && rawOwner.trim().length > 0 ? rawOwner.trim() : 'anonymous';
-  if (owner.length > USER_ID_MAX_LENGTH) {
-    throw new ServiceError(
-      'INVALID_USER_ID',
-      'O identificador do usuário deve ter no máximo 100 caracteres.',
-      400,
-    );
-  }
-  return owner;
-}
+const ServiceError = require('../errors/ServiceError');
+const { validateOwner, ensureSafeStoragePath, validateDocumentId } = require('../utils/documentValidation');
 
 function toPublicDocument(document) {
   return {
@@ -43,6 +21,8 @@ function registerUpload({ file, owner }) {
     throw new ServiceError('FILE_REQUIRED', 'Um arquivo deve ser enviado no campo file.', 400);
   }
 
+  const resolvedPath = ensureSafeStoragePath(file.path);
+
   const document = {
     id: `doc_${crypto.randomUUID()}`,
     originalName: file.originalname,
@@ -51,7 +31,7 @@ function registerUpload({ file, owner }) {
     mimeType: file.mimetype,
     uploadedAt: new Date().toISOString(),
     owner: validatedOwner,
-    path: file.path,
+    path: resolvedPath,
   };
 
   documentRepository.save(document);
@@ -68,27 +48,28 @@ function listDocuments(owner) {
 
 function getDownloadableDocument({ id, owner }) {
   const validatedOwner = validateOwner(owner);
-  if (!id || typeof id !== 'string' || id.trim().length === 0) {
-    throw new ServiceError('INVALID_DOCUMENT_ID', 'O identificador do documento é inválido.', 400);
-  }
+  validateDocumentId(id);
 
   const document = documentRepository.findById(id);
   if (!document) {
     throw new ServiceError('DOCUMENT_NOT_FOUND', 'Documento não encontrado.', 404);
   }
+
   if (document.owner !== validatedOwner) {
     throw new ServiceError('DOCUMENT_ACCESS_DENIED', 'Você não tem acesso a este documento.', 403);
   }
-  if (!fs.existsSync(document.path)) {
+
+  const safeStoragePath = ensureSafeStoragePath(document.path);
+  if (!fs.existsSync(safeStoragePath)) {
     throw new ServiceError('FILE_NOT_FOUND', 'Arquivo físico não encontrado.', 404);
   }
 
-  return document;
+  return { ...document, path: safeStoragePath };
 }
 
 module.exports = {
-  ServiceError,
   registerUpload,
   listDocuments,
   getDownloadableDocument,
+  ServiceError,
 };
