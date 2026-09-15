@@ -42,7 +42,7 @@ body {
   opacity: 0.8;
 }
 
-.owner-card,
+.auth-card,
 .upload-card,
 .documents-card {
   background: #fffdf8;
@@ -53,14 +53,26 @@ body {
   box-shadow: 0 6px 18px rgba(214, 51, 108, 0.08);
 }
 
-.owner-card label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
+.auth-card h2,
+.upload-card h2,
+.documents-card h2 {
+  margin-top: 0;
   color: var(--pink-strong);
 }
 
-.owner-card input,
+.auth-form,
+.auth-session {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.auth-form label {
+  font-weight: 600;
+  color: var(--pink-strong);
+}
+
+.auth-form input,
 .upload-input {
   width: 100%;
   padding: 0.6rem 0.75rem;
@@ -70,17 +82,11 @@ body {
   background: #fffaf3;
 }
 
-.owner-card input:focus,
+.auth-form input:focus,
 .upload-input:focus {
   outline: none;
   border-color: var(--gold);
   box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
-}
-
-.upload-card h2,
-.documents-card h2 {
-  margin-top: 0;
-  color: var(--pink-strong);
 }
 
 .upload-controls {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { downloadDocument } from '../services/documentsApi';
 
-export default function DownloadButton({ document, ownerId }) {
+export default function DownloadButton({ document, token }) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -9,7 +9,7 @@ export default function DownloadButton({ document, ownerId }) {
     setIsDownloading(true);
     setErrorMessage('');
     try {
-      await downloadDocument(document.id, ownerId, document.originalName);
+      await downloadDocument(document.id, token, document.originalName);
     } catch (error) {
       setErrorMessage(error.message || 'Não foi possível baixar o documento.');
     } finally {

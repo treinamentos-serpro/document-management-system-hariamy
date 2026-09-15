@@ -7,7 +7,7 @@ import {
   isAcceptedUploadFile,
 } from '../config/uploadConstraints';
 
-export default function UploadComponent({ ownerId, onUploadSuccess }) {
+export default function UploadComponent({ token, onUploadSuccess }) {
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -17,9 +17,8 @@ export default function UploadComponent({ ownerId, onUploadSuccess }) {
       return 'Selecione um arquivo antes de enviar.';
     }
 
-    const trimmedOwnerId = ownerId.trim();
-    if (!trimmedOwnerId) {
-      return 'Informe um identificador de usuário antes de enviar o documento.';
+    if (!token) {
+      return 'Faça login antes de enviar um documento.';
     }
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
@@ -46,7 +45,7 @@ export default function UploadComponent({ ownerId, onUploadSuccess }) {
     setIsUploading(true);
     setErrorMessage('');
     try {
-      await uploadDocument(file, ownerId.trim());
+      await uploadDocument(file, token);
       fileInputRef.current.value = '';
       onUploadSuccess();
     } catch (error) {

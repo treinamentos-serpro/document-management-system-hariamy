@@ -1,42 +1,74 @@
 import { useCallback, useEffect, useState } from 'react';
 import UploadComponent from './components/UploadComponent';
 import DocumentList from './components/DocumentList';
+import { login } from './services/authApi';
 import { fetchDocuments } from './services/documentsApi';
 import './App.css';
 
-const DEFAULT_OWNER_ID = 'anonymous';
+const DEFAULT_CREDENTIALS = {
+  userId: 'alice',
+  password: 'alice123',
+};
 
 export default function App() {
-  const [ownerId, setOwnerId] = useState(DEFAULT_OWNER_ID);
+  const [credentials, setCredentials] = useState(DEFAULT_CREDENTIALS);
+  const [session, setSession] = useState(null);
   const [documents, setDocuments] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [authErrorMessage, setAuthErrorMessage] = useState('');
+  const [documentsErrorMessage, setDocumentsErrorMessage] = useState('');
 
-  const loadDocuments = useCallback(async (currentOwnerId) => {
-    setIsLoading(true);
-    setErrorMessage('');
+  const token = session?.token || '';
 
-    const nextOwnerId = currentOwnerId.trim();
-    if (!nextOwnerId) {
+  const loadDocuments = useCallback(async (currentToken) => {
+    if (!currentToken) {
       setDocuments([]);
-      setErrorMessage('Informe um identificador de usuário para acessar os documentos.');
+      setDocumentsErrorMessage('');
       setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
+    setDocumentsErrorMessage('');
+
     try {
-      const result = await fetchDocuments(nextOwnerId);
+      const result = await fetchDocuments(currentToken);
       setDocuments(result);
     } catch (error) {
-      setErrorMessage(error.message || 'Não foi possível carregar os documentos.');
+      setDocumentsErrorMessage(error.message || 'Não foi possível carregar os documentos.');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadDocuments(ownerId);
-  }, [ownerId, loadDocuments]);
+    loadDocuments(token);
+  }, [token, loadDocuments]);
+
+  async function handleLogin(event) {
+    event.preventDefault();
+    setIsAuthenticating(true);
+    setAuthErrorMessage('');
+
+    try {
+      const nextSession = await login(credentials.userId.trim(), credentials.password);
+      setSession(nextSession);
+    } catch (error) {
+      setSession(null);
+      setDocuments([]);
+      setAuthErrorMessage(error.message || 'Não foi possível autenticar.');
+    } finally {
+      setIsAuthenticating(false);
+    }
+  }
+
+  function handleLogout() {
+    setSession(null);
+    setDocuments([]);
+    setAuthErrorMessage('');
+    setDocumentsErrorMessage('');
+  }
 
   return (
     <main className="app-shell">
@@ -45,23 +77,59 @@ export default function App() {
         <p>Envie, consulte e baixe seus documentos com carinho.</p>
       </header>
 
-      <section className="owner-card">
-        <label htmlFor="owner-id">Seu identificador de usuário</label>
-        <input
-          id="owner-id"
-          type="text"
-          value={ownerId}
-          onChange={(event) => setOwnerId(event.target.value || DEFAULT_OWNER_ID)}
-          maxLength={100}
-        />
+      <section className="auth-card">
+        <h2>🔐 Acesso</h2>
+        {session ? (
+          <div className="auth-session">
+            <p>
+              Logado como <strong>{session.user.id}</strong>.
+            </p>
+            <button type="button" className="btn-secondary" onClick={handleLogout}>
+              Sair
+            </button>
+          </div>
+        ) : (
+          <form className="auth-form" onSubmit={handleLogin}>
+            <label htmlFor="user-id">Usuário</label>
+            <input
+              id="user-id"
+              type="text"
+              value={credentials.userId}
+              onChange={(event) => setCredentials((current) => ({ ...current, userId: event.target.value }))}
+              maxLength={100}
+              autoComplete="username"
+            />
+
+            <label htmlFor="password">Senha</label>
+            <input
+              id="password"
+              type="password"
+              value={credentials.password}
+              onChange={(event) => setCredentials((current) => ({ ...current, password: event.target.value }))}
+              autoComplete="current-password"
+            />
+
+            <button type="submit" className="btn-primary" disabled={isAuthenticating}>
+              {isAuthenticating ? 'Entrando...' : 'Entrar'}
+            </button>
+          </form>
+        )}
+        <p className="help-text">Credenciais locais padrão: alice / alice123 e bob / bob123.</p>
+        {authErrorMessage && <p className="error-message">{authErrorMessage}</p>}
       </section>
 
-      <UploadComponent ownerId={ownerId} onUploadSuccess={() => loadDocuments(ownerId)} />
+      {session && <UploadComponent token={token} onUploadSuccess={() => loadDocuments(token)} />}
 
       <section className="documents-card">
         <h2>🌼 Meus documentos</h2>
-        {errorMessage && <p className="error-message">{errorMessage}</p>}
-        <DocumentList documents={documents} ownerId={ownerId} isLoading={isLoading} />
+        {session ? (
+          <>
+            {documentsErrorMessage && <p className="error-message">{documentsErrorMessage}</p>}
+            <DocumentList documents={documents} token={token} isLoading={isLoading} />
+          </>
+        ) : (
+          <p className="info-message">Faça login para visualizar apenas os seus documentos.</p>
+        )}
       </section>
     </main>
   );

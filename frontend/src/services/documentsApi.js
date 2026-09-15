@@ -1,5 +1,5 @@
 // Cliente HTTP para a API do DMS. Todas as chamadas usam o prefixo /api
-// (proxy configurado no Vite) e o cabeçalho X-User-Id para identificar o dono.
+// (proxy configurado no Vite) e o token JWT do usuário autenticado.
 
 const API_BASE = '/api';
 
@@ -22,13 +22,21 @@ async function parseErrorResponse(response) {
   return new ApiError('UNKNOWN_ERROR', 'Ocorreu um erro inesperado ao comunicar com o servidor.');
 }
 
-export async function uploadDocument(file, ownerId) {
+function buildAuthHeaders(token) {
+  if (!token) {
+    return {};
+  }
+
+  return { Authorization: ['Bearer', token].join(' ') };
+}
+
+export async function uploadDocument(file, token) {
   const formData = new FormData();
   formData.append('file', file);
 
   const response = await fetch(`${API_BASE}/upload`, {
     method: 'POST',
-    headers: { 'X-User-Id': ownerId },
+    headers: buildAuthHeaders(token),
     body: formData,
   });
 
@@ -38,9 +46,9 @@ export async function uploadDocument(file, ownerId) {
   return response.json();
 }
 
-export async function fetchDocuments(ownerId) {
+export async function fetchDocuments(token) {
   const response = await fetch(`${API_BASE}/documents`, {
-    headers: { 'X-User-Id': ownerId },
+    headers: buildAuthHeaders(token),
   });
 
   if (!response.ok) {
@@ -56,9 +64,9 @@ function extractFilename(contentDisposition, fallbackName) {
   return match ? match[1] : fallbackName;
 }
 
-export async function downloadDocument(id, ownerId, fallbackName) {
+export async function downloadDocument(id, token, fallbackName) {
   const response = await fetch(`${API_BASE}/documents/${id}/download`, {
-    headers: { 'X-User-Id': ownerId },
+    headers: buildAuthHeaders(token),
   });
 
   if (!response.ok) {
