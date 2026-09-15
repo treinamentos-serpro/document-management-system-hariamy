@@ -184,6 +184,7 @@ test('GET /api/documents/:id/download baixa o conteúdo do documento', async () 
 
 test('rotas de documentos exigem autenticação JWT', async () => {
   await withServer(async (baseUrl) => {
+    const ownerToken = await loginAndGetToken(baseUrl, 'alice-private', 'alice123');
     const formData = new FormData();
     formData.append('file', new Blob(['hello-world'], { type: 'text/plain' }), 'hello.txt');
 
@@ -192,9 +193,17 @@ test('rotas de documentos exigem autenticação JWT', async () => {
       body: formData,
     });
     const listResponse = await fetch(`${baseUrl}/api/documents`);
+    const uploadResult = await uploadDocument(baseUrl, {
+      token: ownerToken,
+      content: 'conteudo protegido',
+      filename: 'protegido.txt',
+    });
+    const uploadedDocument = await uploadResult.json();
+    const downloadResponse = await fetch(`${baseUrl}/api/documents/${uploadedDocument.id}/download`);
 
     assert.equal(uploadResponse.status, 401);
     assert.equal(listResponse.status, 401);
+    assert.equal(downloadResponse.status, 401);
   });
 });
 
