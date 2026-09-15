@@ -193,6 +193,9 @@ test('rotas de documentos exigem autenticação JWT', async () => {
       body: formData,
     });
     const listResponse = await fetch(`${baseUrl}/api/documents`);
+    const malformedHeaderResponse = await fetch(`${baseUrl}/api/documents`, {
+      headers: { Authorization: 'Basic abc123' },
+    });
     const uploadResult = await uploadDocument(baseUrl, {
       token: ownerToken,
       content: 'conteudo protegido',
@@ -203,6 +206,7 @@ test('rotas de documentos exigem autenticação JWT', async () => {
 
     assert.equal(uploadResponse.status, 401);
     assert.equal(listResponse.status, 401);
+    assert.equal(malformedHeaderResponse.status, 401);
     assert.equal(downloadResponse.status, 401);
   });
 });

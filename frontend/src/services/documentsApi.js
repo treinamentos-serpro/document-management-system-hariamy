@@ -23,6 +23,10 @@ async function parseErrorResponse(response) {
 }
 
 function buildAuthHeaders(token) {
+  if (!token) {
+    return {};
+  }
+
   return { Authorization: ['Bearer', token].join(' ') };
 }
 
