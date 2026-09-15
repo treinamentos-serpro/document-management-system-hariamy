@@ -1,37 +1,55 @@
-<div align="center">
+# Document Management System
 
-# 🎉 Congratulations Hariamy! 🎉
+Aplicação web para upload, listagem e download de documentos com separação simples
+por usuário.
 
-<img src="https://octodex.github.com/images/welcometocat.png" height="200px" />
+## Stack
 
-### 🌟 You've successfully completed the exercise! 🌟
+- Backend: Node.js + Express
+- Frontend: React + Vite
+- Testes backend: `node:test`
 
-## 🚀 Share Your Success!
+## Funcionalidades
 
-**Show off your new skills and inspire others!**
+- Envio de documentos com `multipart/form-data`
+- Listagem de documentos por `X-User-Id`
+- Download de documentos por identificador
+- Armazenamento local em `backend/storage`
+- Metadados mantidos em memória
 
-<a href="https://twitter.com/intent/tweet?text=I%20just%20completed%20the%20%22Document%20Management%20System%20com%20GitHub%20Copilot%22%20GitHub%20Skills%20hands-on%20exercise!%20%F0%9F%8E%89%0A%0Ahttps%3A%2F%2Fgithub.com%2Ftreinamentos-serpro%2Fdocument-management-system-hariamy%0A%0A%23GitHubSkills%20%23OpenSource%20%23GitHubLearn" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.shields.io/badge/Share%20on%20X-1da1f2?style=for-the-badge&logo=x&logoColor=white" alt="Share on X" />
-</a>
-<a href="https://bsky.app/intent/compose?text=I%20just%20completed%20the%20%22Document%20Management%20System%20com%20GitHub%20Copilot%22%20GitHub%20Skills%20hands-on%20exercise!%20%F0%9F%8E%89%0A%0Ahttps%3A%2F%2Fgithub.com%2Ftreinamentos-serpro%2Fdocument-management-system-hariamy%0A%0A%23GitHubSkills%20%23OpenSource%20%23GitHubLearn" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.shields.io/badge/Share%20on%20Bluesky-0085ff?style=for-the-badge&logo=bluesky&logoColor=white" alt="Share on Bluesky" />
-</a>
-<a href="https://www.linkedin.com/feed/?shareActive=true&text=I%20just%20completed%20the%20%22Document%20Management%20System%20com%20GitHub%20Copilot%22%20GitHub%20Skills%20hands-on%20exercise!%20%F0%9F%8E%89%0A%0Ahttps%3A%2F%2Fgithub.com%2Ftreinamentos-serpro%2Fdocument-management-system-hariamy%0A%0A%23GitHubSkills%20%23OpenSource%20%23GitHubLearn" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.shields.io/badge/Share%20on%20LinkedIn-0077b5?style=for-the-badge&logo=linkedin&logoColor=white" alt="Share on LinkedIn" />
-</a>
+## Como executar
 
-### 🎯 What's Next?
+### Backend
 
-**Keep the momentum going!**
+```bash
+cd backend
+npm install
+npm start
+```
 
-[![](https://img.shields.io/badge/Return%20to%20Exercise-%E2%86%92-1f883d?style=for-the-badge&logo=github&labelColor=197935)](https://github.com/treinamentos-serpro/document-management-system-hariamy/issues/1)
-[![GitHub Skills](https://img.shields.io/badge/Explore%20GitHub%20Skills-000000?style=for-the-badge&logo=github&logoColor=white)](https://learn.github.com/skills)
+O backend usa as variáveis:
 
-*There's no better way to learn than building things!* 🚀
+- `PORT` (padrão: `3000`)
+- `STORAGE_DIR` (padrão: `backend/storage`)
+- `MAX_FILE_SIZE_BYTES` (padrão: `10485760`)
 
-</div>
+### Frontend
 
----
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-&copy; 2025 GitHub &bull; [Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.md) &bull; [MIT License](https://gh.io/mit)
+O frontend consome a API pelo prefixo `/api`.
 
+## Testes
+
+```bash
+cd backend
+npm test
+```
+
+## Documentação complementar
+
+- Especificação funcional: `docs/specs/dms-spec.md`

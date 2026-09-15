@@ -164,3 +164,21 @@ test('upload rejeita tipo de arquivo não permitido', async () => {
     assert.equal(response.status, 415, 'deve rejeitar tipos MIME não permitidos');
   });
 });
+
+test('upload rejeita identificador de usuário maior que 100 caracteres', async () => {
+  await withServer(async (baseUrl) => {
+    const formData = new FormData();
+    formData.append('file', new Blob(['conteudo valido'], { type: 'text/plain' }), 'valido.txt');
+
+    const response = await fetch(`${baseUrl}/api/upload`, {
+      method: 'POST',
+      headers: { 'X-User-Id': 'a'.repeat(101) },
+      body: formData,
+    });
+
+    assert.equal(response.status, 400);
+
+    const body = await response.json();
+    assert.equal(body.error.code, 'INVALID_USER_ID');
+  });
+});

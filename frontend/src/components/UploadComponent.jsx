@@ -1,17 +1,11 @@
 import { useRef, useState } from 'react';
 import { uploadDocument } from '../services/documentsApi';
-
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
-const ACCEPTED_FILE_TYPES = [
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'text/plain',
-  'image/png',
-  'image/jpeg',
-];
+import {
+  ACCEPTED_FILE_TYPES,
+  FILE_INPUT_ACCEPT,
+  MAX_FILE_SIZE_BYTES,
+  UPLOAD_CONSTRAINTS_HELP_TEXT,
+} from '../config/uploadConstraints';
 
 export default function UploadComponent({ ownerId, onUploadSuccess }) {
   const fileInputRef = useRef(null);
@@ -71,12 +65,16 @@ export default function UploadComponent({ ownerId, onUploadSuccess }) {
           ref={fileInputRef}
           className="upload-input"
           disabled={isUploading}
-          accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,image/png,image/jpeg"
+          accept={FILE_INPUT_ACCEPT}
+          aria-describedby="upload-constraints"
         />
         <button type="submit" className="btn-primary" disabled={isUploading}>
           {isUploading ? 'Enviando...' : 'Enviar'}
         </button>
       </div>
+      <p id="upload-constraints" className="help-text">
+        {UPLOAD_CONSTRAINTS_HELP_TEXT}
+      </p>
       {errorMessage && <p className="error-message">{errorMessage}</p>}
     </form>
   );
